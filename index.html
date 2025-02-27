@@ -1,144 +1,353 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Playwright Test Traps</title>
-    <style>
-        .hidden {
-            display: none;
-        }
-        .invisible {
-            opacity: 0;
-            position: absolute;
-        }
-        .loading-spinner {
-            animation: spin 1s linear infinite;
-            width: 50px;
-            height: 50px;
-        }
-        @keyframes spin {
-            100% { transform: rotate(360deg); }
-        }
-        #scroll-target {
-            margin-top: 200vh;
-        }
-    </style>
-    <script>window.SaolaParams = { token: '256910ea-9008-44a7-82e5-5a925160876b' };</script>
-<script defer src="https://www.saola.ai/sdk/saola.latest.js"></script>
+  <meta charset="UTF-8" />
+  <title>Invoice Demo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Bootstrap CSS -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+
+  <style>
+    /* Dark gradient background */
+    body {
+      background: linear-gradient(135deg, #1a1a1a, #333333);
+      color: #f0f0f0;
+      min-height: 100vh;
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+    .container {
+      margin-top: 30px;
+      margin-bottom: 30px;
+    }
+    .form-section,
+    .table-section {
+      background: rgba(0, 0, 0, 0.6);
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+      margin-bottom: 20px;
+    }
+    .btn-custom {
+      background-color: #4ca1af;
+      border: none;
+      color: #fff;
+    }
+    .btn-custom:hover {
+      background-color: #3b8d99;
+    }
+    /* Modal overlay styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    .modal-content {
+      background: #444;
+      padding: 20px 40px;
+      border-radius: 8px;
+      font-size: 1.2em;
+    }
+    /* Fade-in animation for new rows */
+    .fade-in {
+      animation: fadeIn 0.5s ease-in;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+  </style>
 </head>
 <body>
-    <h1>Playwright Test Traps Demo</h1>
+  <div class="container">
+    <h1 class="text-center mb-4">Invoice Demo</h1>
 
-    <!-- 1. Element with dynamic ID that changes on refresh -->
-    <button id="dynamic-${Math.random().toString(36).substr(2, 8)}" 
-            onclick="alert('Dynamic ID clicked!')">
-        Click Me (Dynamic ID)
-    </button>
-
-    <!-- 2. Element that appears after random delay -->
-    <div id="delayed-element" class="hidden"></div>
-    <script>
-        setTimeout(() => {
-            document.getElementById('delayed-element').classList.remove('hidden');
-            document.getElementById('delayed-element').innerHTML = `
-                <input type="text" id="late-input" placeholder="Appeared after delay">
-            `;
-        }, Math.random() * 5000 + 1000); // 1-6 second delay
-    </script>
-
-    <!-- 3. Shadow DOM content -->
-    <div id="shadow-host"></div>
-    <script>
-        const shadowHost = document.querySelector('#shadow-host');
-        const shadowRoot = shadowHost.attachShadow({ mode: 'open' });
-        shadowRoot.innerHTML = `
-            <button id="shadow-button">Shadow DOM Button</button>
-        `;
-    </script>
-
-    <!-- 4. Element that requires hover to activate -->
-    <div id="hover-area" style="padding: 20px; background: #eee;">
-        Hover over me
-        <a href="javascript:void(0)" id="hover-link" class="hidden"
-           onclick="alert('Hover link clicked!')">
-            Clickable link
-        </a>
-    </div>
-    <script>
-        document.getElementById('hover-area').addEventListener('mouseover', () => {
-            document.getElementById('hover-link').classList.remove('hidden');
-        });
-        document.getElementById('hover-area').addEventListener('mouseout', () => {
-            document.getElementById('hover-link').classList.add('hidden');
-        });
-    </script>
-
-    <!-- 5. Elements with zero opacity but clickable -->
-    <button id="invisible-button" class="invisible"
-            onclick="alert('Invisible button clicked!')">
-        Invisible Button
-    </button>
-
-    <!-- 6. Elements with same class but different behaviors -->
-    <div class="same-class" onclick="alert('First element clicked')">First Element</div>
-    <div class="same-class" onclick="alert('Second element clicked')">Second Element</div>
-
-    <!-- 7. Infinite loading spinner -->
-    <div id="loading" class="loading-spinner">🌀</div>
-
-    <!-- 8. Element that moves when approached -->
-    <button id="moving-target" 
-            style=`position: absolute; left: ${Math.random() * 300}px`
-            onmouseover="this.style.left = `${Math.random() * 300}px`">
-        Moving Target
-    </button>
-
-    <!-- 9. Iframe content -->
-    <iframe srcdoc="
-        <html>
-            <body>
-                <button id='frame-button' onclick='alert(&quot;Frame button clicked!&quot;)'>
-                    Iframe Button
-                </button>
-            </body>
-        </html>
-    "></iframe>
-
-    <!-- 10. Form with validation that uses setTimeout -->
-    <form id="tricky-form" onsubmit="setTimeout(() => alert('Form submitted!'), 100)">
-        <input type="text" required pattern="\d{3}"
-               oninvalid="setTimeout(() => this.setCustomValidity(''), 100)">
-        <button type="submit">Submit</button>
-    </form>
-
-    <!-- 11. Element that requires scrolling -->
-    <div id="scroll-target">
-        <button onclick="alert('Scrolled to button!')">Scroll Target Button</button>
+    <!-- Invoice Form -->
+    <div class="form-section">
+      <form id="invoiceForm">
+        <div class="mb-3">
+          <label data-dynamic-id="invoiceNumber" class="form-label">Invoice Number</label>
+          <input
+            type="text"
+            data-dynamic-id="invoiceNumber"
+            class="form-control"
+            placeholder="Enter Invoice Number"
+            required
+          />
+        </div>
+        <div class="mb-3">
+          <label data-dynamic-id="invoiceDate" class="form-label">Date</label>
+          <input
+            type="date"
+            data-dynamic-id="invoiceDate"
+            class="form-control"
+            required
+          />
+        </div>
+        <div class="mb-3">
+          <label data-dynamic-id="customerName" class="form-label">Customer Name</label>
+          <input
+            type="text"
+            data-dynamic-id="customerName"
+            class="form-control"
+            placeholder="Enter Customer Name"
+            required
+          />
+        </div>
+        <div class="mb-3">
+          <label data-dynamic-id="customerAddress" class="form-label">Customer Address</label>
+          <textarea
+            data-dynamic-id="customerAddress"
+            class="form-control"
+            placeholder="Enter Customer Address"
+            rows="2"
+            required
+          ></textarea>
+        </div>
+        <div class="mb-3">
+          <label data-dynamic-id="itemDescription" class="form-label">Item Description</label>
+          <input
+            type="text"
+            data-dynamic-id="itemDescription"
+            class="form-control"
+            placeholder="Enter Item Description"
+            required
+          />
+        </div>
+        <div class="mb-3">
+          <label data-dynamic-id="quantity" class="form-label">Quantity</label>
+          <input
+            type="number"
+            data-dynamic-id="quantity"
+            class="form-control"
+            placeholder="Enter Quantity"
+            required
+          />
+        </div>
+        <div class="mb-3">
+          <label data-dynamic-id="price" class="form-label">Price</label>
+          <input
+            type="number"
+            data-dynamic-id="price"
+            class="form-control"
+            placeholder="Enter Price"
+            step="0.01"
+            required
+          />
+        </div>
+        <button type="submit" class="btn btn-custom">Submit Invoice</button>
+        <button type="button" id="clearTableBtn" class="btn btn-warning ms-2">Clear Table</button>
+        <button type="button" id="deleteSelectedBtn" class="btn btn-danger ms-2">Delete Selected Rows</button>
+      </form>
     </div>
 
-    <!-- 12. Dynamically modified attributes -->
-    <div id="changing-attr" data-testid="original">Hover to change</div>
-    <script>
-        document.getElementById('changing-attr').addEventListener('mouseover', () => {
-            const elem = document.getElementById('changing-attr');
-            elem.dataset.testid = `modified-${Date.now()}`;
-            elem.textContent = `Attribute changed! ${elem.dataset.testid}`;
-        });
-    </script>
+    <!-- Table Section -->
+    <div class="table-section" id="tableContainer">
+      <!-- The invoice table will be rendered here -->
+    </div>
+  </div>
 
-    <!-- 13. XHR-loaded content -->
-    <div id="xhr-content"></div>
-    <script>
+  <!-- Modal Overlay -->
+  <div id="overlayModal" class="modal-overlay">
+    <div class="modal-content">Processing Invoice...</div>
+  </div>
+
+  <!-- Bootstrap JS Bundle (with Popper) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Our Main App Script -->
+  <script>
+    /********************************************************
+     * 1) Configure Challenges (toggle them true/false)     *
+     ********************************************************/
+    const demoChallenges = {
+      dynamicSelectors: true,   // if false => static IDs
+      asyncLoading: true,       // add a delay before table update
+      animations: true,         // fade-in effect for new rows
+      modalOverlay: true,       // pop-up overlay on submit
+      domReRender: true,        // re-render entire table from array
+      shadowDOM: true,         // if set to true => table in shadow root
+      nestedFrames: true       // if set to true => table in an iframe
+    };
+
+    // In-memory data store
+    let invoiceData = [];
+
+    /********************************************************
+     * 2) Dynamic vs Static Selectors                       *
+     ********************************************************/
+    function generateRandomId() {
+      return "id_" + Math.random().toString(36).substr(2, 9);
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      // For each label/data-dynamic-id pair, set an ID either random or static
+      document.querySelectorAll("label[data-dynamic-id]").forEach((label) => {
+        const fieldName = label.getAttribute("data-dynamic-id");
+        const fieldElem = document.querySelector(`[data-dynamic-id="${fieldName}"]:not(label)`);
+        if (!fieldElem) return;
+        if (demoChallenges.dynamicSelectors) {
+          const newId = generateRandomId();
+          label.setAttribute("for", newId);
+          fieldElem.id = newId;
+        } else {
+          label.setAttribute("for", fieldName);
+          fieldElem.id = fieldName;
+        }
+      });
+
+      // Build the table container
+      const container = document.getElementById("tableContainer");
+      // For simplicity, we won't do nestedFrames/shadowDOM here. Just direct DOM:
+      container.innerHTML = `
+        <table class="table table-dark table-striped">
+          <thead>
+            <tr>
+              <th>Select</th>
+              <th>Invoice Number</th>
+              <th>Date</th>
+              <th>Customer Name</th>
+              <th>Customer Address</th>
+              <th>Item Description</th>
+              <th>Quantity</th>
+              <th>Price</th>
+            </tr>
+          </thead>
+          <tbody id="invoiceTableBody"></tbody>
+        </table>
+      `;
+    });
+
+    /********************************************************
+     * 3) Rendering the Table                               *
+     ********************************************************/
+    function renderTable() {
+      const tbody = document.getElementById("invoiceTableBody");
+      if (!tbody) return;
+      tbody.innerHTML = ""; // clear old rows
+
+      invoiceData.forEach((inv, index) => {
+        const row = document.createElement("tr");
+        if (demoChallenges.animations) {
+          row.classList.add("fade-in");
+        }
+        row.setAttribute("data-index", index);
+
+        // Checkbox cell
+        const checkCell = document.createElement("td");
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.id = generateRandomId();
+        checkCell.appendChild(checkbox);
+        row.appendChild(checkCell);
+
+        // Fields
+        ["invoiceNumber","invoiceDate","customerName","customerAddress","itemDescription","quantity","price"]
+          .forEach(key => {
+            const td = document.createElement("td");
+            td.textContent = inv[key];
+            row.appendChild(td);
+          });
+
+        tbody.appendChild(row);
+      });
+    }
+
+    /********************************************************
+     * 4) Show Modal Overlay                                *
+     ********************************************************/
+    function showModalOverlay() {
+      if (!demoChallenges.modalOverlay) return;
+      const modal = document.getElementById("overlayModal");
+      modal.style.display = "flex";
+      setTimeout(() => {
+        modal.style.display = "none";
+      }, 1500);
+    }
+
+    /********************************************************
+     * 5) Handle Form Submission                            *
+     ********************************************************/
+    document.getElementById("invoiceForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      // Gather input values
+      const invoiceNumber = document.querySelector('[data-dynamic-id="invoiceNumber"]:not(label)').value;
+      const invoiceDate = document.querySelector('[data-dynamic-id="invoiceDate"]:not(label)').value;
+      const customerName = document.querySelector('[data-dynamic-id="customerName"]:not(label)').value;
+      const customerAddress = document.querySelector('[data-dynamic-id="customerAddress"]:not(label)').value;
+      const itemDescription = document.querySelector('[data-dynamic-id="itemDescription"]:not(label)').value;
+      const quantity = document.querySelector('[data-dynamic-id="quantity"]:not(label)').value;
+      const price = document.querySelector('[data-dynamic-id="price"]:not(label)').value;
+
+      // Push new entry
+      invoiceData.push({
+        invoiceNumber,
+        invoiceDate,
+        customerName,
+        customerAddress,
+        itemDescription,
+        quantity,
+        price
+      });
+
+      // Show a quick modal if enabled
+      showModalOverlay();
+
+      // Simulate async loading
+      if (demoChallenges.asyncLoading) {
         setTimeout(() => {
-            fetch('https://jsonplaceholder.typicode.com/todos/1')
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('xhr-content').innerHTML = `
-                        <div id="loaded-data">Loaded: ${data.title}</div>
-                    `;
-                });
-        }, 2000);
-    </script>
+          if (demoChallenges.domReRender) {
+            renderTable();
+          } else {
+            // or we could just append row
+            renderTable();
+          }
+        }, 500);
+      } else {
+        renderTable();
+      }
+
+      // Reset form
+      e.target.reset();
+    });
+
+    /********************************************************
+     * 6) Clear Entire Table                                *
+     ********************************************************/
+    document.getElementById("clearTableBtn").addEventListener("click", () => {
+      invoiceData = [];
+      renderTable();
+    });
+
+    /********************************************************
+     * 7) Delete Selected Rows                              *
+     ********************************************************/
+    document.getElementById("deleteSelectedBtn").addEventListener("click", () => {
+      const tbody = document.getElementById("invoiceTableBody");
+      if (!tbody) return;
+      const rows = Array.from(tbody.querySelectorAll("tr"));
+      rows.forEach((row) => {
+        const checkbox = row.querySelector('input[type="checkbox"]');
+        if (checkbox && checkbox.checked) {
+          const idx = parseInt(row.getAttribute("data-index"), 10);
+          invoiceData[idx] = null;
+        }
+      });
+      // filter out nulls
+      invoiceData = invoiceData.filter(inv => inv !== null);
+      renderTable();
+    });
+  </script>
 </body>
 </html>
