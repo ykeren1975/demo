@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Playwright Test Traps</title>
+    <style>
+        .hidden {
+            display: none;
+        }
+        .invisible {
+            opacity: 0;
+            position: absolute;
+        }
+        .loading-spinner {
+            animation: spin 1s linear infinite;
+            width: 50px;
+            height: 50px;
+        }
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+        #scroll-target {
+            margin-top: 200vh;
+        }
+    </style>
+</head>
+<body>
+    <h1>Playwright Test Traps Demo</h1>
+
+    <!-- 1. Element with dynamic ID that changes on refresh -->
+    <button id="dynamic-${Math.random().toString(36).substr(2, 8)}" 
+            onclick="alert('Dynamic ID clicked!')">
+        Click Me (Dynamic ID)
+    </button>
+
+    <!-- 2. Element that appears after random delay -->
+    <div id="delayed-element" class="hidden"></div>
+    <script>
+        setTimeout(() => {
+            document.getElementById('delayed-element').classList.remove('hidden');
+            document.getElementById('delayed-element').innerHTML = `
+                <input type="text" id="late-input" placeholder="Appeared after delay">
+            `;
+        }, Math.random() * 5000 + 1000); // 1-6 second delay
+    </script>
+
+    <!-- 3. Shadow DOM content -->
+    <div id="shadow-host"></div>
+    <script>
+        const shadowHost = document.querySelector('#shadow-host');
+        const shadowRoot = shadowHost.attachShadow({ mode: 'open' });
+        shadowRoot.innerHTML = `
+            <button id="shadow-button">Shadow DOM Button</button>
+        `;
+    </script>
+
+    <!-- 4. Element that requires hover to activate -->
+    <div id="hover-area" style="padding: 20px; background: #eee;">
+        Hover over me
+        <a href="javascript:void(0)" id="hover-link" class="hidden"
+           onclick="alert('Hover link clicked!')">
+            Clickable link
+        </a>
+    </div>
+    <script>
+        document.getElementById('hover-area').addEventListener('mouseover', () => {
+            document.getElementById('hover-link').classList.remove('hidden');
+        });
+        document.getElementById('hover-area').addEventListener('mouseout', () => {
+            document.getElementById('hover-link').classList.add('hidden');
+        });
+    </script>
+
+    <!-- 5. Elements with zero opacity but clickable -->
+    <button id="invisible-button" class="invisible"
+            onclick="alert('Invisible button clicked!')">
+        Invisible Button
+    </button>
+
+    <!-- 6. Elements with same class but different behaviors -->
+    <div class="same-class" onclick="alert('First element clicked')">First Element</div>
+    <div class="same-class" onclick="alert('Second element clicked')">Second Element</div>
+
+    <!-- 7. Infinite loading spinner -->
+    <div id="loading" class="loading-spinner">🌀</div>
+
+    <!-- 8. Element that moves when approached -->
+    <button id="moving-target" 
+            style=`position: absolute; left: ${Math.random() * 300}px`
+            onmouseover="this.style.left = `${Math.random() * 300}px`">
+        Moving Target
+    </button>
+
+    <!-- 9. Iframe content -->
+    <iframe srcdoc="
+        <html>
+            <body>
+                <button id='frame-button' onclick='alert(&quot;Frame button clicked!&quot;)'>
+                    Iframe Button
+                </button>
+            </body>
+        </html>
+    "></iframe>
+
+    <!-- 10. Form with validation that uses setTimeout -->
+    <form id="tricky-form" onsubmit="setTimeout(() => alert('Form submitted!'), 100)">
+        <input type="text" required pattern="\d{3}"
+               oninvalid="setTimeout(() => this.setCustomValidity(''), 100)">
+        <button type="submit">Submit</button>
+    </form>
+
+    <!-- 11. Element that requires scrolling -->
+    <div id="scroll-target">
+        <button onclick="alert('Scrolled to button!')">Scroll Target Button</button>
+    </div>
+
+    <!-- 12. Dynamically modified attributes -->
+    <div id="changing-attr" data-testid="original">Hover to change</div>
+    <script>
+        document.getElementById('changing-attr').addEventListener('mouseover', () => {
+            const elem = document.getElementById('changing-attr');
+            elem.dataset.testid = `modified-${Date.now()}`;
+            elem.textContent = `Attribute changed! ${elem.dataset.testid}`;
+        });
+    </script>
+
+    <!-- 13. XHR-loaded content -->
+    <div id="xhr-content"></div>
+    <script>
+        setTimeout(() => {
+            fetch('https://jsonplaceholder.typicode.com/todos/1')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('xhr-content').innerHTML = `
+                        <div id="loaded-data">Loaded: ${data.title}</div>
+                    `;
+                });
+        }, 2000);
+    </script>
+</body>
+</html>
